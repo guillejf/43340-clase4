@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 const port = 3000;
+
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 let productos = [
@@ -16,13 +18,13 @@ app.get("/productos", (req, res) => {
     const productosFiltradosPorPrecio = productos.filter(
       (p) => p.precio == precio
     );
-    return res.json({
+    return res.status(200).json({
       status: "success",
       msg: "te paso todos los productos cuyo precio = " + precio,
       data: productosFiltradosPorPrecio,
     });
   } else {
-    return res.json({
+    return res.status(200).json({
       status: "success",
       msg: "te paso todos los productos",
       data: productos,
@@ -34,13 +36,13 @@ app.get("/productos/:id", (req, res) => {
   const id = req.params.id;
   const producto = productos.find((p) => p.id == id);
   if (producto) {
-    return res.json({
+    return res.status(200).json({
       status: "success",
       msg: "producto encontrado con exito",
       data: producto,
     });
   } else {
-    return res.json({
+    return res.status(400).json({
       status: "error",
       msg: "no se encontro el producto",
       data: {},
@@ -48,28 +50,56 @@ app.get("/productos/:id", (req, res) => {
   }
 });
 
-app.get("/decimehola/:nombre", (req, res) => {
-  const nombre = req.params.nombre;
-  return res.json({
+app.delete("/productos/:id", (req, res) => {
+  const id = req.params.id;
+  //const producto = productos.find((p) => p.id == id);
+  productos = productos.filter((p) => p.id != id);
+
+  return res.status(200).json({
     status: "success",
-    msg: "hola " + nombre + ", como andas?",
+    msg: "filtramos los productos cuyo id es " + id,
     data: {},
   });
+});
 
-  /*
-  console.log("params", req.params);
-  console.log("body", req.body);
-  console.log("query", req.query); 
-  */
+app.put("/productos/:id", (req, res) => {
+  const id = req.params.id; //10000
+  const datosNuevos = req.body; // {name: otra cosa , precio: 666}
+  const indice = productos.findIndex((p) => p.id == id);
+  if (indice == -1) {
+    return res.status(404).json({
+      status: "error",
+      msg: "error ya que este producto no existe",
+      data: {},
+    });
+  } else {
+    productos[indice] = { ...datosNuevos, id: productos[indice].id };
+    return res.status(201).json({
+      status: "success",
+      msg: "producto modificado ok",
+      data: productos[indice],
+    });
+  }
+});
+
+app.post("/productos", (req, res) => {
+  const productoParaCrear = req.body;
+  productoParaCrear.id = (Math.random() * 1000000000).toFixed(0);
+  productoParaCrear.fecha = Date.now();
+  productos.push(productoParaCrear);
+  return res.status(201).json({
+    status: "success",
+    msg: "creamos el producto que pediste",
+    data: productoParaCrear,
+  });
 });
 
 app.get("*", (req, res) => {
-  return res.json({
+  return res.status(404).json({
     status: "error",
     msg: "error esa ruta no existe",
     data: {},
   });
-  1;
 });
 
 app.listen(port, () => {
